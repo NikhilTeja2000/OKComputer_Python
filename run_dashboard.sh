@@ -21,7 +21,7 @@ if ! python -c "import dash" 2>/dev/null; then
 fi
 
 echo "Starting dashboard..."
-echo "Dashboard will be available at: http://localhost:8050"
+echo "Dashboard will be available at: http://localhost:8052"
 echo "Press Ctrl+C to stop"
 echo "=========================================="
 
