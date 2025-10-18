@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R Shiny Dashboard Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #8B4513;
+            --secondary-color: #A0522D;
+            --accent-color: #CD853F;
+            --light-color: #DEB887;
+            --dark-color: #654321;
+            --highlight-color: #D2691E;
+            --neutral-color: #D2B48C;
+            --background-color: #F5F5DC;
+            --text-dark: #2c1810;
+            --text-light: #6b5b73;
+            --card-shadow: 0 10px 30px rgba(139, 69, 19, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--background-color) 0%, #f8f6f0 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            padding: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(139, 69, 19, 0.15);
+        }
+
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 0.5rem;
+        }
+
+        .status-running {
+            background: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        .status-stopped {
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .status-warning {
+            background: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 69, 19, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--highlight-color) 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(205, 133, 63, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .info-item {
+            background: var(--background-color);
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .info-item h4 {
+            font-family: 'Playfair Display', serif;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-item p {
+            margin: 0;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .log-area {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border: 1px solid #22c55e;
+            color: #166534;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .alert-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #ef4444;
+            color: #dc2626;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-chart-line"></i> R Shiny Dashboard Manager</h1>
+            <p>Control and monitor your Personalized Diet Analytics Dashboard</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Status Overview -->
+        <div class="card">
+            <h2><i class="fas fa-tachometer-alt"></i> System Status 
+                <span id="status-indicator" class="status-indicator status-stopped"></span>
+            </h2>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>R Installation</h4>
+                    <p id="r-status">Checking...</p>
+                </div>
+                <div class="info-item">
+                    <h4>R Packages</h4>
+                    <p id="packages-status">Checking...</p>
+                </div>
+                <div class="info-item">
+                    <h4>Dashboard Status</h4>
+                    <p id="dashboard-status">Stopped</p>
+                </div>
+                <div class="info-item">
+                    <h4>Port</h4>
+                    <p id="port-info">Not assigned</p>
+                </div>
+            </div>
+
+            <div id="status-message" class="alert alert-info hidden">
+                <i class="fas fa-info-circle"></i>
+                <span id="status-text">System status information</span>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="card">
+            <h2><i class="fas fa-cogs"></i> Control Panel</h2>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <button id="install-btn" class="btn btn-secondary">
+                    <i class="fas fa-download"></i> Install Packages
+                </button>
+                <button id="start-btn" class="btn btn-primary" disabled>
+                    <i class="fas fa-play"></i> Start Dashboard
+                </button>
+                <button id="stop-btn" class="btn btn-secondary" disabled>
+                    <i class="fas fa-stop"></i> Stop Dashboard
+                </button>
+                <button id="check-btn" class="btn btn-secondary">
+                    <i class="fas fa-sync"></i> Check Status
+                </button>
+            </div>
+
+            <div class="info-item">
+                <h4>Quick Actions</h4>
+                <p>
+                    <a href="/download/data" target="_blank" style="color: var(--primary-color); text-decoration: none;">
+                        <i class="fas fa-download"></i> Download Sample Data
+                    </a> | 
+                    <a href="https://eqq3pylpyaib6.ok.kimi.link" target="_blank" style="color: var(--primary-color); text-decoration: none;">
+                        <i class="fas fa-external-link-alt"></i> View Original Report
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Dashboard Access -->
+        <div class="card">
+            <h2><i class="fas fa-external-link-alt"></i> Dashboard Access</h2>
+            
+            <div id="dashboard-access" class="hidden">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Dashboard is running and ready!</span>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <h4>Local Access</h4>
+                        <p><a id="local-url" href="#" target="_blank" style="color: var(--primary-color);">http://localhost:3838</a></p>
+                    </div>
+                    <div class="info-item">
+                        <h4>Network Access</h4>
+                        <p><a id="network-url" href="#" target="_blank" style="color: var(--primary-color);">Loading...</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="dashboard-stopped" class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Dashboard is not running. Click "Start Dashboard" to begin.</span>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="card">
+            <h2><i class="fas fa-terminal"></i> System Logs</h2>
+            <div class="log-area" id="log-area">
+                <div>Welcome to the R Shiny Dashboard Manager</div>
+                <div>Checking system status...</div>
+            </div>
+            <div style="margin-top: 1rem;">
+                <button id="clear-logs-btn" class="btn btn-secondary">
+                    <i class="fas fa-trash"></i> Clear Logs
+                </button>
+                <button id="refresh-logs-btn" class="btn btn-secondary">
+                    <i class="fas fa-sync"></i> Refresh Logs
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let statusCheckInterval;
+        let isCheckingStatus = false;
+
+        // Utility functions
+        function addLog(message, type = 'info') {
+            const logArea = document.getElementById('log-area');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logArea.appendChild(logEntry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.getElementById('status-message');
+            const alertText = document.getElementById('status-text');
+            
+            alertDiv.className = `alert alert-${type}`;
+            alertText.textContent = message;
+            alertDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                alertDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        function updateStatusIndicator(status) {
+            const indicator = document.getElementById('status-indicator');
+            indicator.className = 'status-indicator';
+            
+            switch(status) {
+                case 'Running':
+                    indicator.classList.add('status-running');
+                    break;
+                case 'Stopped':
+                    indicator.classList.add('status-stopped');
+                    break;
+                default:
+                    indicator.classList.add('status-warning');
+            }
+        }
+
+        async function checkStatus() {
+            if (isCheckingStatus) return;
+            isCheckingStatus = true;
+
+            try {
+                const response = await fetch('/api/check');
+                const data = await response.json();
+                
+                // Update R installation status
+                const rStatus = document.getElementById('r-status');
+                const packagesStatus = document.getElementById('packages-status');
+                
+                if (data.r_installed) {
+                    rStatus.textContent = 'Installed';
+                    rStatus.style.color = '#22c55e';
+                } else {
+                    rStatus.textContent = 'Not Installed';
+                    rStatus.style.color = '#ef4444';
+                }
+                
+                if (data.packages_installed) {
+                    packagesStatus.textContent = 'Installed';
+                    packagesStatus.style.color = '#22c55e';
+                    document.getElementById('start-btn').disabled = false;
+                } else {
+                    packagesStatus.textContent = 'Not Installed';
+                    packagesStatus.style.color = '#ef4444';
+                    document.getElementById('start-btn').disabled = true;
+                }
+                
+                // Check if dashboard is running
+                const statusResponse = await fetch('/api/status');
+                const statusData = await statusResponse.json();
+                
+                updateStatusIndicator(statusData.status);
+                document.getElementById('dashboard-status').textContent = statusData.status;
+                document.getElementById('port-info').textContent = statusData.port || 'Not assigned';
+                
+                if (statusData.is_running) {
+                    document.getElementById('dashboard-access').classList.remove('hidden');
+                    document.getElementById('dashboard-stopped').classList.add('hidden');
+                    document.getElementById('start-btn').disabled = true;
+                    document.getElementById('stop-btn').disabled = false;
+                    
+                    // Update URLs
+                    const urlResponse = await fetch('/api/app-url');
+                    const urlData = await urlResponse.json();
+                    if (urlData.url) {
+                        document.getElementById('local-url').href = urlData.url;
+                        document.getElementById('local-url').textContent = urlData.url;
+                        
+                        // Get network URL
+                        const networkUrl = urlData.url.replace('localhost', window.location.hostname);
+                        document.getElementById('network-url').href = networkUrl;
+                        document.getElementById('network-url').textContent = networkUrl;
+                    }
+                } else {
+                    document.getElementById('dashboard-access').classList.add('hidden');
+                    document.getElementById('dashboard-stopped').classList.remove('hidden');
+                    document.getElementById('start-btn').disabled = !data.packages_installed;
+                    document.getElementById('stop-btn').disabled = true;
+                }
+                
+            } catch (error) {
+                addLog(`Error checking status: ${error.message}`, 'error');
+                showAlert('Failed to check system status', 'error');
+            } finally {
+                isCheckingStatus = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('check-btn').addEventListener('click', () => {
+            addLog('Manual status check initiated');
+            checkStatus();
+        });
+
+        document.getElementById('install-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('install-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="loading"></span> Installing...';
+            btn.disabled = true;
+            
+            try {
+                addLog('Starting R package installation');
+                showAlert('Installing R packages. This may take several minutes...', 'info');
+                
+                const response = await fetch('/api/install', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('R packages installed successfully', 'success');
+                    showAlert('R packages installed successfully!', 'success');
+                } else {
+                    addLog(`Package installation failed: ${data.message}`, 'error');
+                    showAlert(`Installation failed: ${data.message}`, 'error');
+                }
+                
+                if (data.output) {
+                    addLog(`Installation output: ${data.output}`, 'info');
+                }
+                if (data.error) {
+                    addLog(`Installation error: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`Installation error: ${error.message}`, 'error');
+                showAlert('Installation failed with an error', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                checkStatus();
+            }
+        });
+
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('start-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="loading"></span> Starting...';
+            btn.disabled = true;
+            
+            try {
+                addLog('Starting R Shiny dashboard');
+                showAlert('Starting R Shiny dashboard...', 'info');
+                
+                const response = await fetch('/api/start', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ port: 3838 })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog(`Dashboard started successfully on port ${data.port}`, 'success');
+                    showAlert(`Dashboard started successfully!`, 'success');
+                } else {
+                    addLog(`Failed to start dashboard: ${data.message}`, 'error');
+                    showAlert(`Start failed: ${data.message}`, 'error');
+                    if (data.error) {
+                        addLog(`Error details: ${data.error}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                addLog(`Start error: ${error.message}`, 'error');
+                showAlert('Failed to start dashboard', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                setTimeout(checkStatus, 3000); // Wait a bit before checking status
+            }
+        });
+
+        document.getElementById('stop-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('stop-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="loading"></span> Stopping...';
+            btn.disabled = true;
+            
+            try {
+                addLog('Stopping R Shiny dashboard');
+                showAlert('Stopping R Shiny dashboard...', 'info');
+                
+                const response = await fetch('/api/stop', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog('Dashboard stopped successfully', 'success');
+                    showAlert('Dashboard stopped successfully!', 'success');
+                } else {
+                    addLog(`Failed to stop dashboard: ${data.message}`, 'error');
+                    showAlert(`Stop failed: ${data.message}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`Stop error: ${error.message}`, 'error');
+                showAlert('Failed to stop dashboard', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                checkStatus();
+            }
+        });
+
+        document.getElementById('clear-logs-btn').addEventListener('click', () => {
+            document.getElementById('log-area').innerHTML = '<div>Logs cleared</div>';
+        });
+
+        document.getElementById('refresh-logs-btn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                
+                data.logs.forEach(log => addLog(log));
+                if (data.last_error) {
+                    addLog(`Last error: ${data.last_error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`Failed to refresh logs: ${error.message}`, 'error');
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('Dashboard manager initialized');
+            checkStatus();
+            
+            // Set up periodic status checks
+            statusCheckInterval = setInterval(checkStatus, 10000); // Check every 10 seconds
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        });
+    </script>
+</body>
+</html>
